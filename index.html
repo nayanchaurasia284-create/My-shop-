@@ -1,0 +1,500 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#0f0f0f">
+<meta name="description" content="Business Manager - Stock, Orders & Sales">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>BizTrack</title>
+<link rel="manifest" href="manifest.json">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0a0a;
+    --surface: #141414;
+    --card: #1c1c1c;
+    --border: #2a2a2a;
+    --accent: #f0c040;
+    --accent2: #4ade80;
+    --accent3: #f87171;
+    --text: #f0f0f0;
+    --muted: #666;
+    --font-head: 'Syne', sans-serif;
+    --font-body: 'DM Sans', sans-serif;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font-body);
+    min-height: 100dvh;
+    overflow-x: hidden;
+  }
+
+  /* ── TOP BAR ── */
+  .topbar {
+    position: sticky; top: 0; z-index: 100;
+    background: rgba(10,10,10,0.9);
+    backdrop-filter: blur(16px);
+    border-bottom: 1px solid var(--border);
+    padding: 14px 20px;
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .topbar h1 { font-family: var(--font-head); font-size: 22px; font-weight: 800; letter-spacing: -0.5px; }
+  .topbar h1 span { color: var(--accent); }
+  .topbar-date { font-size: 12px; color: var(--muted); }
+
+  /* ── MAIN CONTENT ── */
+  .page { display: none; padding: 20px; padding-bottom: 90px; animation: fadeUp 0.3s ease; }
+  .page.active { display: block; }
+  @keyframes fadeUp { from { opacity:0; transform:translateY(10px); } to { opacity:1; transform:translateY(0); } }
+
+  /* ── BOTTOM NAV ── */
+  .bottom-nav {
+    position: fixed; bottom: 0; left: 0; right: 0; z-index: 100;
+    background: rgba(20,20,20,0.95);
+    backdrop-filter: blur(20px);
+    border-top: 1px solid var(--border);
+    display: flex;
+    padding: 8px 0 calc(8px + env(safe-area-inset-bottom));
+  }
+  .nav-btn {
+    flex: 1; display: flex; flex-direction: column; align-items: center; gap: 4px;
+    padding: 6px 4px;
+    background: none; border: none; cursor: pointer;
+    color: var(--muted); font-family: var(--font-body); font-size: 11px;
+    transition: color 0.2s;
+  }
+  .nav-btn svg { width: 22px; height: 22px; }
+  .nav-btn.active { color: var(--accent); }
+  .nav-btn.active svg path, .nav-btn.active svg rect, .nav-btn.active svg circle, .nav-btn.active svg polyline, .nav-btn.active svg line { stroke: var(--accent); }
+
+  /* ── CARDS ── */
+  .card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 18px;
+    margin-bottom: 14px;
+  }
+  .card-title {
+    font-family: var(--font-head); font-size: 13px; font-weight: 600;
+    color: var(--muted); text-transform: uppercase; letter-spacing: 1px;
+    margin-bottom: 14px;
+  }
+
+  /* ── STAT GRID ── */
+  .stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 14px; }
+  .stat-box {
+    background: var(--card); border: 1px solid var(--border); border-radius: 14px;
+    padding: 16px 14px;
+  }
+  .stat-box .label { font-size: 11px; color: var(--muted); margin-bottom: 6px; }
+  .stat-box .value { font-family: var(--font-head); font-size: 26px; font-weight: 800; line-height: 1; }
+  .stat-box .value.yellow { color: var(--accent); }
+  .stat-box .value.green { color: var(--accent2); }
+  .stat-box .value.red { color: var(--accent3); }
+
+  /* ── FORMS ── */
+  .form-row { display: flex; gap: 10px; margin-bottom: 12px; }
+  .form-row.col { flex-direction: column; }
+  input, select, textarea {
+    background: var(--surface); border: 1px solid var(--border);
+    color: var(--text); border-radius: 10px;
+    padding: 12px 14px; font-family: var(--font-body); font-size: 14px;
+    flex: 1; outline: none; width: 100%;
+    transition: border 0.2s;
+  }
+  input:focus, select:focus { border-color: var(--accent); }
+  select option { background: var(--surface); }
+
+  /* ── BUTTONS ── */
+  .btn {
+    padding: 13px 20px; border-radius: 10px; border: none;
+    font-family: var(--font-head); font-size: 14px; font-weight: 700;
+    cursor: pointer; transition: all 0.2s; letter-spacing: 0.3px;
+  }
+  .btn-primary { background: var(--accent); color: #000; flex: 1; }
+  .btn-primary:active { transform: scale(0.97); }
+  .btn-danger { background: #2a1111; color: var(--accent3); border: 1px solid var(--accent3); padding: 8px 14px; font-size: 12px; }
+  .btn-sm { padding: 7px 14px; font-size: 12px; }
+  .btn-ghost { background: var(--surface); color: var(--text); border: 1px solid var(--border); }
+
+  /* ── LISTS ── */
+  .list-item {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 14px 0; border-bottom: 1px solid var(--border);
+    gap: 10px;
+  }
+  .list-item:last-child { border-bottom: none; }
+  .item-name { font-weight: 500; font-size: 15px; }
+  .item-sub { font-size: 12px; color: var(--muted); margin-top: 2px; }
+  .badge {
+    padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 600;
+    white-space: nowrap;
+  }
+  .badge-yellow { background: rgba(240,192,64,0.15); color: var(--accent); }
+  .badge-green { background: rgba(74,222,128,0.15); color: var(--accent2); }
+  .badge-red { background: rgba(248,113,113,0.15); color: var(--accent3); }
+
+  /* ── LOW STOCK ALERT ── */
+  .alert-box {
+    background: rgba(248,113,113,0.08); border: 1px solid rgba(248,113,113,0.3);
+    border-radius: 12px; padding: 14px; margin-bottom: 14px;
+    display: flex; align-items: center; gap: 10px;
+  }
+  .alert-box svg { flex-shrink: 0; }
+  .alert-box p { font-size: 13px; color: var(--accent3); }
+
+  /* ── SECTION HEADER ── */
+  .sec-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
+  .sec-header h2 { font-family: var(--font-head); font-size: 18px; font-weight: 700; }
+
+  /* ── EMPTY STATE ── */
+  .empty { text-align: center; padding: 40px 20px; color: var(--muted); }
+  .empty svg { width: 48px; height: 48px; margin-bottom: 12px; opacity: 0.3; }
+  .empty p { font-size: 14px; }
+
+  /* ── SALES CHART ── */
+  .chart-wrap { overflow-x: auto; padding-bottom: 4px; }
+  .chart-bars { display: flex; align-items: flex-end; gap: 6px; min-width: 280px; height: 100px; }
+  .bar-col { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 4px; }
+  .bar { width: 100%; background: var(--accent); border-radius: 6px 6px 0 0; min-height: 4px; transition: height 0.4s ease; }
+  .bar-label { font-size: 10px; color: var(--muted); }
+  .bar-val { font-size: 10px; color: var(--accent); font-weight: 600; }
+
+  /* ── MODAL ── */
+  .modal-overlay {
+    position: fixed; inset: 0; z-index: 200;
+    background: rgba(0,0,0,0.7); backdrop-filter: blur(4px);
+    display: flex; align-items: flex-end; justify-content: center;
+    opacity: 0; pointer-events: none; transition: opacity 0.25s;
+  }
+  .modal-overlay.open { opacity: 1; pointer-events: all; }
+  .modal {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 24px 24px 0 0; padding: 24px 20px;
+    width: 100%; max-width: 500px; max-height: 85vh; overflow-y: auto;
+    transform: translateY(30px); transition: transform 0.25s ease;
+  }
+  .modal-overlay.open .modal { transform: translateY(0); }
+  .modal h3 { font-family: var(--font-head); font-size: 18px; font-weight: 700; margin-bottom: 18px; }
+  .modal-btns { display: flex; gap: 10px; margin-top: 16px; }
+
+  .tag { display: inline-block; padding: 3px 8px; border-radius: 6px; font-size: 11px; background: var(--surface); color: var(--muted); margin-top: 4px; }
+
+  .divider { height: 1px; background: var(--border); margin: 16px 0; }
+
+  /* ── INSTALL PROMPT ── */
+  .install-bar {
+    background: rgba(240,192,64,0.1); border: 1px solid rgba(240,192,64,0.3);
+    border-radius: 12px; padding: 14px 16px; margin-bottom: 14px;
+    display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  }
+  .install-bar p { font-size: 13px; }
+  .install-bar p strong { color: var(--accent); }
+
+  /* Dashboard welcome */
+  .welcome { margin-bottom: 20px; }
+  .welcome h2 { font-family: var(--font-head); font-size: 24px; font-weight: 800; line-height: 1.2; }
+  .welcome p { color: var(--muted); font-size: 13px; margin-top: 6px; }
+</style>
+</head>
+<body>
+
+<!-- TOP BAR -->
+<div class="topbar">
+  <h1>Biz<span>Track</span></h1>
+  <div class="topbar-date" id="topDate"></div>
+</div>
+
+<!-- PAGES -->
+
+<!-- DASHBOARD -->
+<div class="page active" id="page-dashboard">
+  <div class="welcome">
+    <h2>Good day,<br>Boss 👋</h2>
+    <p id="dashDate"></p>
+  </div>
+
+  <div id="installBar" class="install-bar" style="display:none">
+    <p>📲 <strong>Install BizTrack</strong> on your home screen!</p>
+    <button class="btn btn-primary btn-sm" onclick="installApp()">Install</button>
+  </div>
+
+  <div class="stat-grid">
+    <div class="stat-box">
+      <div class="label">Today's Sales</div>
+      <div class="value yellow" id="dash-sales">₹0</div>
+    </div>
+    <div class="stat-box">
+      <div class="label">Orders Today</div>
+      <div class="value green" id="dash-orders">0</div>
+    </div>
+    <div class="stat-box">
+      <div class="label">Stock Items</div>
+      <div class="value" id="dash-stock">0</div>
+    </div>
+    <div class="stat-box">
+      <div class="label">Low Stock</div>
+      <div class="value red" id="dash-lowstock">0</div>
+    </div>
+  </div>
+
+  <div id="lowStockAlert" style="display:none" class="alert-box">
+    <svg width="20" height="20" fill="none" stroke="#f87171" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+    <p id="lowStockText"></p>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Last 7 Days Sales</div>
+    <div class="chart-wrap">
+      <div class="chart-bars" id="salesChart"></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Recent Orders</div>
+    <div id="recentOrders"></div>
+  </div>
+</div>
+
+<!-- STOCK -->
+<div class="page" id="page-stock">
+  <div class="sec-header">
+    <h2>Stock</h2>
+    <button class="btn btn-primary btn-sm" onclick="openModal('addStock')">+ Add Item</button>
+  </div>
+
+  <input type="text" id="stockSearch" placeholder="Search items..." style="margin-bottom:14px" oninput="renderStock()">
+  <div id="stockList"></div>
+</div>
+
+<!-- ORDERS -->
+<div class="page" id="page-orders">
+  <div class="sec-header">
+    <h2>Orders</h2>
+    <button class="btn btn-primary btn-sm" onclick="openModal('addOrder')">+ New Order</button>
+  </div>
+
+  <div style="display:flex;gap:8px;margin-bottom:14px;overflow-x:auto;padding-bottom:4px">
+    <button class="btn btn-ghost btn-sm" onclick="filterOrders('all')" id="fAll" style="white-space:nowrap">All</button>
+    <button class="btn btn-ghost btn-sm" onclick="filterOrders('pending')" id="fPending" style="white-space:nowrap">Pending</button>
+    <button class="btn btn-ghost btn-sm" onclick="filterOrders('done')" id="fDone" style="white-space:nowrap">Done</button>
+  </div>
+
+  <div id="orderList"></div>
+</div>
+
+<!-- SALES -->
+<div class="page" id="page-sales">
+  <div class="sec-header">
+    <h2>Daily Sales</h2>
+    <button class="btn btn-primary btn-sm" onclick="openModal('addSale')">+ Add Sale</button>
+  </div>
+
+  <div class="stat-grid">
+    <div class="stat-box">
+      <div class="label">This Month</div>
+      <div class="value yellow" id="monthSales">₹0</div>
+    </div>
+    <div class="stat-box">
+      <div class="label">This Week</div>
+      <div class="value green" id="weekSales">₹0</div>
+    </div>
+  </div>
+
+  <div id="salesList"></div>
+</div>
+
+<!-- BOTTOM NAV -->
+<nav class="bottom-nav">
+  <button class="nav-btn active" onclick="goPage('dashboard',this)">
+    <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+    Dashboard
+  </button>
+  <button class="nav-btn" onclick="goPage('stock',this)">
+    <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>
+    Stock
+  </button>
+  <button class="nav-btn" onclick="goPage('orders',this)">
+    <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>
+    Orders
+  </button>
+  <button class="nav-btn" onclick="goPage('sales',this)">
+    <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>
+    Sales
+  </button>
+</nav>
+
+<!-- MODALS -->
+
+<!-- Add Stock -->
+<div class="modal-overlay" id="modal-addStock">
+  <div class="modal">
+    <h3>Add Stock Item</h3>
+    <div class="form-row col">
+      <input id="sName" placeholder="Item name *" />
+      <input id="sSKU" placeholder="SKU / Code (optional)" />
+    </div>
+    <div class="form-row">
+      <input id="sQty" type="number" placeholder="Quantity *" min="0" />
+      <input id="sMinQty" type="number" placeholder="Min stock alert" min="0" />
+    </div>
+    <div class="form-row">
+      <input id="sBuy" type="number" placeholder="Buy price ₹" min="0" />
+      <input id="sSell" type="number" placeholder="Sell price ₹" min="0" />
+    </div>
+    <select id="sCat">
+      <option value="">Category (optional)</option>
+      <option>Electronics</option><option>Clothing</option><option>Food</option>
+      <option>Stationery</option><option>Other</option>
+    </select>
+    <div class="modal-btns">
+      <button class="btn btn-ghost" onclick="closeModal('addStock')">Cancel</button>
+      <button class="btn btn-primary" onclick="addStock()">Save Item</button>
+    </div>
+  </div>
+</div>
+
+<!-- Add Order -->
+<div class="modal-overlay" id="modal-addOrder">
+  <div class="modal">
+    <h3>New Order</h3>
+    <input id="oCust" placeholder="Customer name *" style="margin-bottom:10px" />
+    <input id="oItem" placeholder="Item / Description *" style="margin-bottom:10px" />
+    <div class="form-row">
+      <input id="oQty" type="number" placeholder="Qty" min="1" value="1" />
+      <input id="oAmt" type="number" placeholder="Amount ₹ *" min="0" />
+    </div>
+    <select id="oStatus" style="margin-bottom:10px">
+      <option value="pending">Pending</option>
+      <option value="done">Completed</option>
+    </select>
+    <input id="oNote" placeholder="Note (optional)" />
+    <div class="modal-btns">
+      <button class="btn btn-ghost" onclick="closeModal('addOrder')">Cancel</button>
+      <button class="btn btn-primary" onclick="addOrder()">Save Order</button>
+    </div>
+  </div>
+</div>
+
+<!-- Add Sale -->
+<div class="modal-overlay" id="modal-addSale">
+  <div class="modal">
+    <h3>Record Sale</h3>
+    <input id="salItem" placeholder="Item sold *" style="margin-bottom:10px" />
+    <div class="form-row">
+      <input id="salQty" type="number" placeholder="Qty" min="1" value="1" />
+      <input id="salAmt" type="number" placeholder="Total ₹ *" min="0" />
+    </div>
+    <input id="salDate" type="date" style="margin-bottom:10px" />
+    <input id="salNote" placeholder="Note (optional)" />
+    <div class="modal-btns">
+      <button class="btn btn-ghost" onclick="closeModal('addSale')">Cancel</button>
+      <button class="btn btn-primary" onclick="addSale()">Record</button>
+    </div>
+  </div>
+</div>
+
+<!-- Edit Stock -->
+<div class="modal-overlay" id="modal-editStock">
+  <div class="modal">
+    <h3>Edit Item</h3>
+    <input id="esName" placeholder="Item name *" style="margin-bottom:10px" />
+    <div class="form-row">
+      <input id="esQty" type="number" placeholder="Quantity *" min="0" />
+      <input id="esMinQty" type="number" placeholder="Min stock" min="0" />
+    </div>
+    <div class="form-row">
+      <input id="esBuy" type="number" placeholder="Buy price ₹" />
+      <input id="esSell" type="number" placeholder="Sell price ₹" />
+    </div>
+    <input id="esId" type="hidden" />
+    <div class="modal-btns">
+      <button class="btn btn-danger" onclick="deleteStock()">Delete</button>
+      <button class="btn btn-primary" onclick="saveEditStock()">Update</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── DATA LAYER ──
+const DB = {
+  get: (k) => { try { return JSON.parse(localStorage.getItem(k)) || [] } catch { return [] } },
+  set: (k,v) => localStorage.setItem(k, JSON.stringify(v)),
+};
+
+let deferredInstall = null;
+window.addEventListener('beforeinstallprompt', e => {
+  e.preventDefault(); deferredInstall = e;
+  document.getElementById('installBar').style.display = 'flex';
+});
+async function installApp() {
+  if (!deferredInstall) return;
+  deferredInstall.prompt();
+  const r = await deferredInstall.userChoice;
+  if (r.outcome === 'accepted') document.getElementById('installBar').style.display = 'none';
+}
+
+// ── NAVIGATION ──
+function goPage(id, btn) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('page-' + id).classList.add('active');
+  btn.classList.add('active');
+  if (id === 'dashboard') renderDashboard();
+  if (id === 'stock') renderStock();
+  if (id === 'orders') renderOrders('all');
+  if (id === 'sales') renderSales();
+}
+
+// ── MODALS ──
+function openModal(id) {
+  if (id === 'addSale') {
+    const today = new Date().toISOString().split('T')[0];
+    document.getElementById('salDate').value = today;
+  }
+  document.getElementById('modal-' + id).classList.add('open');
+}
+function closeModal(id) { document.getElementById('modal-' + id).classList.remove('open'); }
+document.querySelectorAll('.modal-overlay').forEach(m => {
+  m.addEventListener('click', e => { if (e.target === m) m.classList.remove('open'); });
+});
+
+// ── STOCK ──
+function addStock() {
+  const name = document.getElementById('sName').value.trim();
+  const qty = parseInt(document.getElementById('sQty').value) || 0;
+  if (!name) return alert('Item name required!');
+  const items = DB.get('stock');
+  items.push({
+    id: Date.now(), name,
+    sku: document.getElementById('sSKU').value.trim(),
+    qty, minQty: parseInt(document.getElementById('sMinQty').value) || 5,
+    buy: parseFloat(document.getElementById('sBuy').value) || 0,
+    sell: parseFloat(document.getElementById('sSell').value) || 0,
+    cat: document.getElementById('sCat').value,
+    added: new Date().toISOString()
+  });
+  DB.set('stock', items);
+  ['sName','sSKU','sQty','sMinQty','sBuy','sSell'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('sCat').value = '';
+  closeModal('addStock');
+  renderStock(); renderDashboard();
+}
+
+function renderStock() {
+  const items = DB.get('stock');
+  const q = document.getElementById('stockSearch').value.toLowerCase();
+  const filtered = items.filter(i => i.name.toLowerCase().includes(q) || (i.sku||'').toLowerCase().includes(q));
+  const el = document.getElementById('stockList');
+  if (!filtered.length) { el.innerHTML = `<div class="empty"><svg fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"/></svg><p>No items found</p></div>`; return; }
+  el.innerHTML = filtered.map(i => {
+    const low = i.qty <= i.minQty;
+    r
